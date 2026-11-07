@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; worker-src 'self'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Passory — démarrage</title>
+  <link rel="stylesheet" href="assets/css/tailwind.css" />
+</head>
+<body
+  class="bg-gray-900 text-white h-screen w-screen flex flex-col items-center justify-center space-y-5 select-none"
+>
+  <img src="logo.png" alt="Passory" class="w-20 h-20 pointer-events-none" draggable="false" />
+  <div class="h-14 w-14 rounded-full border-4 border-gray-700 border-t-blue-500 animate-spin"></div>
+  <div class="text-center">
+    <p class="text-lg font-semibold animate-pulse">Démarrage de Passory</p>
+    <p class="text-sm text-gray-400 mt-1">Chargement du coffre…</p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; worker-src 'self'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Passory — Paramètres</title>
+  <link rel="stylesheet" href="assets/css/tailwind.css" />
+  <link rel="stylesheet" href="assets/css/passory-ui.css" />
+  <link rel="stylesheet" href="assets/css/mobile.css" />
+  <link rel="preload" as="image" href="logo.png" />
+  <script src="src/platform/web-bootstrap.js" defer></script>
+  <link rel="stylesheet" href="assets/fa/css/all.min.css" />
+  <style>
+    .drag { -webkit-app-region: drag; }
+    .no-drag { -webkit-app-region: no-drag; }
+    html { scroll-behavior: smooth; }
+    input[type=range] { -webkit-appearance: none; height: 6px; border-radius: 3px; background: #4b5563; cursor: pointer; }
+    input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: #3b82f6; cursor: pointer; }
+    input[type=range]:focus-visible { outline: 2px solid var(--border-focus); outline-offset: 3px; }
+    .gen-check { display: flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 8px; border-radius: 8px; cursor: pointer; font-size: 0.875rem; }
+    .gen-check:hover { background: rgba(255,255,255,0.05); }
+    .gen-check input { width: 16px; height: 16px; accent-color: var(--blue); }
+    .about-row { display: flex; gap: 10px; font-size: 0.875rem; line-height: 1.6; }
+    .about-row dt { color: var(--text-secondary); min-width: 110px; }
+    .about-row dd { color: var(--text-primary); }
+  </style>
+</head>
+<body class="flex flex-col h-screen select-none">
+
+  <div class="titlebar drag">
+    <div class="titlebar-left">
+      <img src="logo.png" alt="" width="24" height="24" class="h-5 w-5" />
+      <span class="titlebar-title">Paramètres</span>
+    </div>
+    <div class="no-drag titlebar-controls">
+      <button id="btn-minimize" class="titlebar-btn"><i class="fas fa-minus" aria-hidden="true"></i></button>
+      <button id="btn-maximize" class="titlebar-btn"><i class="far fa-square" aria-hidden="true"></i></button>
+      <button id="btn-close"    class="titlebar-btn close"><i class="fas fa-times" aria-hidden="true"></i></button>
+    </div>
+  </div>
+
+  <div class="flex flex-1 overflow-hidden">
+    <aside data-sidebar data-active="settings"></aside>
+
+    <main class="page-main" id="main-content">
+      <div class="page-content">
+
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Paramètres</h1>
+            <p class="page-subtitle">Les changements sont enregistrés immédiatement.</p>
+          </div>
+        </div>
+
+        <div class="max-w-2xl space-y-6">
+
+        <!-- Sauvegarde -->
+        <section id="sec-backup" class="settings-card">
+          <h2><i class="fas fa-box-archive text-emerald-400" aria-hidden="true"></i>Sauvegarde</h2>
+          <p class="text-sm mb-4" style="color:var(--text-secondary);line-height:1.55">
+            Une sauvegarde est un fichier qui contient tout votre coffre, protégé par une <b style="color:var(--text-primary)">phrase de passe de sauvegarde</b>
+            que vous choisissez. Copiez-le sur une clé USB ou un disque externe : c'est ce qui vous permettra de tout retrouver
+            après une panne, ou de passer sur un nouvel ordinateur.
+          </p>
+          <div class="notice notice-info mb-4" id="bk-other-device">
+            <i class="fas fa-laptop" aria-hidden="true"></i>
+            <div><b>Passer sur un autre appareil</b>
+              <ol class="notice-sub list-decimal pl-5 mt-1" style="line-height:1.55">
+                <li>Ici, créez une sauvegarde.</li>
+                <li>Copiez le fichier sur l'autre appareil (clé USB, câble, disque externe…).</li>
+                <li>Sur l'autre appareil, ouvrez Passory, puis Paramètres › Sauvegarde › Restaurer une sauvegarde, avec la même phrase de passe.</li>
+              </ol></div>
+          </div>
+          <p id="bk-last" class="text-sm mb-4" style="color:var(--text-secondary)"></p>
+
+          <div class="space-y-4">
+            <div class="settings-sub">
+              <h3>Créer une sauvegarde</h3>
+              <p class="form-hint mb-3">Choisissez une phrase de passe d'au moins 12 caractères et notez-la : sans elle, le fichier ne pourra pas être ouvert.</p>
+              <div class="grid grid-cols-1 gap-3">
+                <div class="form-group">
+                  <label class="form-label" for="bk-pass">Phrase de passe de la sauvegarde</label>
+                  <div class="relative">
+                    <input id="bk-pass" type="password" minlength="12" autocomplete="off" class="form-input" style="padding-right:40px" />
+                    <button type="button" data-eye="bk-pass" class="item-action-btn absolute right-2 top-1/2 -translate-y-1/2" title="Afficher la phrase de passe"><i class="fas fa-eye" aria-hidden="true"></i></button>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label" for="bk-pass2">Retapez la phrase de passe</label>
+                  <input id="bk-pass2" type="password" minlength="12" autocomplete="off" class="form-input" />
+                  <p id="bk-match" class="form-hint" aria-live="polite"></p>
+                </div>
+              </div>
+              <button id="bk-export" class="btn btn-success mt-3">
+                <i class="fas fa-file-export" aria-hidden="true"></i>Enregistrer la sauvegarde…
+              </button>
+            </div>
+
+            <div class="settings-sub">
+              <h3>Restaurer une sauvegarde</h3>
+              <p class="form-hint mb-3">Ouvrez un fichier de sauvegarde Passory (.json) avec la phrase de passe choisie lors de sa création.</p>
+              <div class="form-group">
+                <label class="form-label" for="bk-import-pass">Phrase de passe de la sauvegarde à ouvrir</label>
+                <div class="relative">
+                  <input id="bk-import-pass" type="password" autocomplete="off" class="form-input" style="padding-right:40px" />
+                  <button type="button" data-eye="bk-import-pass" class="item-action-btn absolute right-2 top-1/2 -translate-y-1/2" title="Afficher la phrase de passe"><i class="fas fa-eye" aria-hidden="true"></i></button>
+                </div>
+              </div>
+              <div class="flex flex-wrap gap-2 mt-3">
+                <button id="bk-import-merge" class="btn btn-primary" title="Les éléments de la sauvegarde sont ajoutés à ceux déjà présents">
+                  <i class="fas fa-file-import" aria-hidden="true"></i>Ajouter à mon coffre…
+                </button>
+                <button id="bk-import-replace" class="btn btn-ghost" style="color:#fca5a5;border-color:rgba(239,68,68,0.45)" title="Tout le contenu actuel est remplacé par celui de la sauvegarde">
+                  <i class="fas fa-rotate-left" aria-hidden="true"></i>Remplacer tout mon coffre…
+                </button>
+              </div>
+              <p class="form-hint mt-2">« Ajouter » garde vos éléments actuels (des doublons sont possibles). « Remplacer » efface d'abord tout le contenu actuel.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Sécurité -->
+        <section id="sec-security" class="settings-card">
+          <h2><i class="fas fa-shield-halved text-blue-400" aria-hidden="true"></i>Verrouillage</h2>
+
+          <div class="settings-row">
+            <div>
+              <label class="settings-title" for="autolock-select">Verrouillage automatique</label>
+              <p class="settings-desc">Le coffre se verrouille tout seul si vous n'utilisez pas Passory pendant ce temps.</p>
+            </div>
+            <select id="autolock-select" class="form-select compact">
+              <option value="1">Après 1 minute</option>
+              <option value="5">Après 5 minutes</option>
+              <option value="10">Après 10 minutes</option>
+              <option value="15">Après 15 minutes</option>
+              <option value="30">Après 30 minutes</option>
+              <option value="60">Après 1 heure</option>
+              <option value="0">Jamais (déconseillé)</option>
+            </select>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <p class="settings-title" id="lockmin-label">Verrouiller quand la fenêtre est réduite</p>
+              <p class="settings-desc">Le coffre se verrouille dès que vous réduisez Passory dans la barre des tâches.</p>
+            </div>
+            <label class="switch no-drag">
+              <input id="lockmin-toggle" type="checkbox" aria-labelledby="lockmin-label" />
+              <span class="switch-track" aria-hidden="true"></span>
+            </label>
+          </div>
+
+          <!-- Téléphone uniquement : sur ordinateur, le mot de passe maître est demandé à chaque ouverture. -->
+          <div class="settings-row hidden" id="qu-row">
+            <div>
+              <p class="settings-title" id="qu-label">Déverrouiller avec la biométrie <span id="qu-badge" class="ml-1 text-xs"></span></p>
+              <p class="settings-desc" id="qu-desc">
+                Ouvre Passory avec votre empreinte ou votre visage, sans retaper le mot de passe maître.
+                La biométrie est demandée à chaque fois.
+              </p>
+            </div>
+            <label class="switch no-drag">
+              <input id="qu-toggle" type="checkbox" aria-labelledby="qu-label" />
+              <span class="switch-track" aria-hidden="true"></span>
+            </label>
+          </div>
+
+          <div class="settings-row">
+            <div>
+              <p class="settings-title">Affichage des données sensibles</p>
+              <p class="settings-desc">Les mots de passe, numéros de carte, IBAN et numéros de pièce sont toujours masqués dans les listes.
+                Cliquez sur <i class="fas fa-eye" aria-hidden="true"></i> pour en afficher un seul, le temps de le lire.</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Presse-papier -->
+        <section id="sec-clipboard" class="settings-card">
+          <h2><i class="fas fa-clipboard text-teal-400" aria-hidden="true"></i>Presse-papier</h2>
+          <div class="settings-row">
+            <div>
+              <label class="settings-title" for="clip-select">Effacer ce que Passory a copié</label>
+              <p class="settings-desc">Quand vous copiez un mot de passe, il est retiré du presse-papier après ce délai (sauf si vous avez copié autre chose entre-temps).</p>
+            </div>
+            <select id="clip-select" class="form-select compact">
+              <option value="10">Après 10 secondes</option>
+              <option value="20">Après 20 secondes</option>
+              <option value="30">Après 30 secondes</option>
+              <option value="60">Après 1 minute</option>
+              <option value="120">Après 2 minutes</option>
+              <option value="0">Jamais (déconseillé)</option>
+            </select>
+          </div>
+        </section>
+
+        <!-- Générateur -->
+        <section id="sec-generator" class="settings-card">
+          <h2><i class="fas fa-wand-magic-sparkles text-blue-400" aria-hidden="true"></i>Générateur de mots de passe</h2>
+          <p class="settings-desc mb-4">Réglages utilisés par le bouton <i class="fas fa-wand-magic-sparkles" aria-hidden="true"></i> lors de l'ajout d'un mot de passe.</p>
+          <div class="space-y-4">
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label class="font-medium" for="gen-length">Longueur</label>
+                <div class="flex items-center gap-2">
+                  <input id="gen-length" type="number" min="8" max="128" class="form-input" style="width:80px;text-align:center" />
+                  <span class="text-sm" style="color:var(--text-secondary)">caractères</span>
+                </div>
+              </div>
+              <input id="gen-slider" type="range" min="8" max="128" class="w-full" aria-label="Longueur du mot de passe" />
+            </div>
+
+            <fieldset>
+              <legend class="text-sm font-medium mb-2" style="color:var(--text-secondary)">Caractères utilisés</legend>
+              <div class="grid grid-cols-2 gap-1">
+                <label class="gen-check"><input id="gen-upper" type="checkbox" />Majuscules (A-Z)</label>
+                <label class="gen-check"><input id="gen-lower" type="checkbox" />Minuscules (a-z)</label>
+                <label class="gen-check"><input id="gen-digits" type="checkbox" />Chiffres (0-9)</label>
+                <label class="gen-check"><input id="gen-symbols" type="checkbox" />Symboles (!@#…)</label>
+                <label class="gen-check col-span-2"><input id="gen-avoid" type="checkbox" />Éviter les caractères qui se ressemblent (0/O, 1/l/I)</label>
+              </div>
+            </fieldset>
+
+            <div>
+              <p class="text-sm mb-1" style="color:var(--text-secondary)">Exemple :</p>
+              <div class="flex items-center gap-2">
+                <code id="gen-preview" class="flex-1 text-sm rounded px-3 py-2 font-mono truncate select-text"
+                  style="background:var(--bg-base);border:1px solid var(--border)" aria-live="polite" aria-label="Exemple de mot de passe généré">—</code>
+                <button id="gen-test" class="btn btn-ghost" title="Générer un autre exemple"><i class="fas fa-rotate-right" aria-hidden="true"></i></button>
+                <button id="gen-copy" class="btn btn-ghost" title="Copier cet exemple"><i class="fas fa-copy" aria-hidden="true"></i></button>
+              </div>
+              <p id="gen-status" class="form-hint mt-1" aria-live="polite"></p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Mot de passe maître -->
+        <section id="sec-master" class="settings-card">
+          <h2><i class="fas fa-key text-yellow-400" aria-hidden="true"></i>Changer le mot de passe maître</h2>
+          <form id="change-form" class="space-y-3" novalidate>
+            <div class="form-group">
+              <label class="form-label" for="old-pw">Mot de passe maître actuel</label>
+              <div class="relative">
+                <input id="old-pw" type="password" required autocomplete="current-password" class="form-input" style="padding-right:40px" />
+                <button type="button" data-eye="old-pw" class="item-action-btn absolute right-2 top-1/2 -translate-y-1/2" title="Afficher le mot de passe actuel"><i class="fas fa-eye" aria-hidden="true"></i></button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="new-pw">Nouveau mot de passe maître <span style="font-weight:400">(au moins 12 caractères)</span></label>
+              <div class="relative">
+                <input id="new-pw" type="password" required minlength="12" autocomplete="new-password" class="form-input" style="padding-right:40px" />
+                <button type="button" data-eye="new-pw" class="item-action-btn absolute right-2 top-1/2 -translate-y-1/2" title="Afficher le nouveau mot de passe"><i class="fas fa-eye" aria-hidden="true"></i></button>
+              </div>
+              <div class="h-1.5 rounded-full overflow-hidden" style="background:var(--border)" role="progressbar"
+                aria-label="Solidité du nouveau mot de passe" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div id="pw-strength-bar" class="h-full w-0 rounded-full" style="transition:width .3s"></div>
+              </div>
+              <p id="pw-strength-label" class="form-hint" aria-live="polite"></p>
+            </div>
+            <div class="form-group">
+              <label class="form-label" for="new-pw2">Retapez le nouveau mot de passe</label>
+              <input id="new-pw2" type="password" required minlength="12" autocomplete="new-password" class="form-input" />
+              <p id="pw-match-label" class="form-hint" aria-live="polite"></p>
+            </div>
+            <p class="form-hint"><i class="fas fa-triangle-exclamation mr-1" style="color:#fbbf24" aria-hidden="true"></i>Comme l'actuel, le nouveau mot de passe ne pourra pas être récupéré si vous l'oubliez. Notez-le.</p>
+            <button type="submit" id="change-submit" class="btn btn-primary">
+              <i class="fas fa-key" aria-hidden="true"></i>Changer le mot de passe maître
+            </button>
+          </form>
+        </section>
+
+        <!-- Zone dangereuse -->
+        <section id="sec-danger" class="settings-card" style="border-color:rgba(239,68,68,0.45)">
+          <h2 style="color:#fca5a5"><i class="fas fa-triangle-exclamation" aria-hidden="true"></i>Zone dangereuse</h2>
+          <div class="settings-row">
+            <div>
+              <p class="settings-title">Remettre les réglages par défaut</p>
+              <p class="settings-desc">Verrouillage, presse-papier et générateur reviennent à leurs valeurs d'origine. Vos données ne sont pas touchées.</p>
+            </div>
+            <button id="reset-settings" class="btn btn-ghost">Réinitialiser</button>
+          </div>
+          <div class="settings-row">
+            <div>
+              <p class="settings-title" style="color:#fca5a5">Effacer tout le coffre</p>
+              <p class="settings-desc">Supprime définitivement tous vos éléments et le mot de passe maître de cet ordinateur. Faites d'abord une sauvegarde si vous voulez garder vos données.</p>
+            </div>
+            <button id="wipe-all" class="btn btn-danger">Tout effacer…</button>
+          </div>
+        </section>
+
+        <!-- À propos -->
+        <section id="sec-about" class="settings-card">
+          <h2><i class="fas fa-circle-info" style="color:var(--text-secondary)" aria-hidden="true"></i>À propos de Passory</h2>
+          <p class="text-sm mb-3" style="color:var(--text-secondary);line-height:1.55">
+            Passory est un gestionnaire de mots de passe qui fonctionne entièrement sur votre ordinateur.
+            Pas de compte, pas de serveur : <b style="color:var(--text-primary)">aucune donnée ne quitte votre ordinateur.</b>
+          </p>
+          <dl class="space-y-1 select-text">
+            <div class="about-row"><dt>Version</dt><dd id="app-version">—</dd></div>
+            <div class="about-row"><dt>Éditeur</dt><dd>RootLab — association loi 1901</dd></div>
+            <div class="about-row"><dt>Site officiel</dt><dd>https://passory.rootlab.fr</dd></div>
+            <div class="about-row"><dt>Licence</dt><dd>GNU GPL v3 — logiciel libre, fourni sans aucune garantie</dd></div>
+            <div class="about-row"><dt>Copyright</dt><dd>&copy; 2026 RootLab</dd></div>
+            <div class="about-row"><dt>Contact</dt><dd>contact@rootlab.fr</dd></div>
+          </dl>
+        </section>
+
+      </div><!-- /max-w-2xl -->
+      </div><!-- /page-content -->
+    </main>
+  </div>
+
+  <script src="src/shared/features.js" defer></script>
+
+  <script src="assets/js/common.js" defer></script>
+  <script src="assets/js/settings.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; worker-src 'self'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Passory — Transfert par câble USB</title>
+  
+  <meta name="robots" content="noindex, nofollow" />
+  <meta property="og:title"       content="Passory — Transfert par câble USB" />
+  <meta property="og:description" content="Partagez vos mots de passe en local, chiffrement de bout en bout, sans cloud." />
+  <meta property="og:image"       content="logo.png" />
+  <meta property="og:type"        content="website" />
+  <link rel="canonical" href="transfer.html" />
+  <!-- Préchargement LCP : logo dans la titlebar -->
+  <link rel="preload" as="image" href="logo.png" />
+  <link rel="stylesheet" href="assets/css/tailwind.css" />
+  <link rel="stylesheet" href="assets/css/passory-ui.css" />
+  <link rel="stylesheet" href="assets/css/mobile.css" />
+  <link rel="stylesheet" href="assets/fa/css/all.min.css" />
+  <script src="src/platform/web-bootstrap.js" defer></script>
+  <style>
+    .drag    { -webkit-app-region: drag; }
+    .no-drag { -webkit-app-region: no-drag; }
+
+    /* ── Statut connexion ─────────────────────────────── */
+    .transfer-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: var(--bg-overlay);
+      font-size: 0.875rem;
+    }
+    .status-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      transition: background 0.3s;
+    }
+    .status-dot.waiting    { background: var(--text-muted); }
+    .status-dot.connecting { background: var(--yellow); animation: pulse-dot 1s infinite; }
+    .status-dot.connected  { background: var(--green); }
+    .status-dot.error      { background: var(--red); }
+    @keyframes pulse-dot {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.3; }
+    }
+
+    /* ── SAS card ─────────────────────────────────────── */
+    .sas-card {
+      border: 1px solid var(--yellow);
+      background: rgba(245, 158, 11, 0.06);
+      border-radius: 10px;
+      padding: 16px 20px;
+    }
+    .sas-code {
+      font-family: monospace;
+      font-size: 1.5rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--yellow);
+    }
+
+    /* ── Barre de progression ─────────────────────────── */
+    .progress-track {
+      height: 8px;
+      background: var(--bg-overlay);
+      border-radius: 4px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .progress-fill {
+      height: 100%;
+      border-radius: 4px;
+      background: var(--teal);
+      transition: width 0.25s ease;
+    }
+
+    /* ── Sélection items ──────────────────────────────── */
+    .item-check-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.12s;
+      user-select: none;
+    }
+    .item-check-row:hover { background: rgba(255,255,255,0.04); }
+    .item-check-row input[type="checkbox"] {
+      width: 16px; height: 16px;
+      accent-color: var(--teal);
+      flex-shrink: 0;
+      cursor: pointer;
+    }
+    .item-check-row .item-info { flex: 1; min-width: 0; }
+    .item-check-row .item-label {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .item-check-row .item-sub {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Mode tabs ────────────────────────────────────── */
+    .mode-tabs {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-overlay);
+      border-radius: 10px;
+      padding: 4px;
+      border: 1px solid var(--border);
+    }
+    .mode-tab {
+      flex: 1;
+      padding: 8px 0;
+      border-radius: 7px;
+      font-size: 0.875rem;
+      font-weight: 500;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s, color 0.15s;
+      background: transparent;
+      color: var(--text-secondary);
+      min-height: 44px;
+    }
+    .mode-tab.active {
+      background: var(--teal);
+      color: #fff;
+    }
+    .mode-tab:not(.active):hover {
+      background: rgba(255,255,255,0.06);
+      color: var(--text-primary);
+    }
+
+    /* ── Instructions câble ───────────────────────────── */
+    .cable-hint {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      background: rgba(20,184,166,0.07);
+      border: 1px solid rgba(20,184,166,0.25);
+      border-radius: 10px;
+      padding: 14px 16px;
+      font-size: 0.8125rem;
+      color: var(--text-secondary);
+      line-height: 1.55;
+    }
+    .cable-hint i { color: var(--teal); margin-top: 1px; flex-shrink: 0; }
+
+    /* ── Received items ───────────────────────────────── */
+    .received-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(16,185,129,0.06);
+      border: 1px solid rgba(16,185,129,0.15);
+      font-size: 0.8125rem;
+      color: var(--text-primary);
+    }
+    .received-item i { color: var(--green); }
+
+    /* ── Focus visible (WCAG 2.1 AA) ─────────────────── */
+    /* Couvre les éléments custom non gérés par passory-ui */
+    .mode-tab:focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 2px;
+    }
+    .item-check-row:focus-within {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 2px;
+      border-radius: 8px;
+    }
+    .btn:focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 2px;
+    }
+    .titlebar-btn:focus-visible {
+      outline: 2px solid var(--border-focus);
+      outline-offset: 2px;
+    }
+
+    /* ── États :active et :disabled ──────────────────── */
+    .mode-tab:active           { opacity: 0.82; transform: scale(0.98); }
+    .mode-tab:disabled         { opacity: 0.4; cursor: not-allowed; }
+    .btn:disabled              { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+    .btn-ghost:active          { transform: scale(0.97); }
+    .btn-select:hover          { background: rgba(255,255,255,0.07); color: var(--text-primary); }
+
+    /* ── Touch targets : boutons "Tout sélectionner" ─── */
+    /* Inline padding override → respecte 44 px min-height */
+    #send-select-all,
+    #send-deselect-all {
+      min-height: 36px;   /* desktop ; 44px sur mobile via media query */
+      padding: 6px 12px;
+      font-size: 0.8125rem;
+    }
+    @media (max-width: 640px) {
+      #send-select-all,
+      #send-deselect-all { min-height: 44px; padding: 10px 12px; }
+    }
+
+    /* ── Lisibilité : line-height paragraphes ────────── */
+    .cable-hint,
+    .cable-hint strong,
+    #recv-host-hint,
+    #send-count-hint { line-height: 1.6; }
+
+    /* ── Préférence réduite de mouvement ─────────────── */
+    @media (prefers-reduced-motion: reduce) {
+      .status-dot.connecting { animation: none; opacity: 1; }
+      .progress-fill         { transition: none; }
+    }
+
+    /* Sections cachées */
+    .section-hidden { display: none !important; }
+  </style>
+</head>
+<body class="flex flex-col h-screen select-none">
+
+  <!-- Titlebar -->
+  <div class="titlebar drag">
+    <div class="titlebar-left">
+      <img src="logo.png" alt="Logo Passory" width="20" height="20" class="h-5 w-5" />
+      <span class="titlebar-title">Transfert</span>
+    </div>
+    <div class="no-drag titlebar-controls">
+      <button id="btn-minimize" class="titlebar-btn" aria-label="Réduire"><i class="fas fa-minus"></i></button>
+      <button id="btn-maximize" class="titlebar-btn" aria-label="Agrandir"><i class="far fa-square"></i></button>
+      <button id="btn-close"    class="titlebar-btn close" aria-label="Fermer"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+
+  <!-- Layout principal -->
+  <div class="flex flex-1 overflow-hidden">
+    <aside data-sidebar data-active="transfer"></aside>
+
+    <main class="page-main" role="main">
+      <div class="page-content" style="max-width: 680px;">
+
+        <!-- En-tête -->
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Transférer vers un autre appareil</h1>
+            <p class="page-subtitle">Copier vos données vers un autre ordinateur ou un téléphone.</p>
+          </div>
+        </div>
+
+        <!-- Méthode recommandée -->
+        <div class="notice notice-info mb-5" id="transfer-recommended">
+          <i class="fas fa-lightbulb" aria-hidden="true"></i>
+          <div class="flex-1">
+            <b>La méthode la plus simple : une sauvegarde</b>
+            <ol class="notice-sub mt-1" style="list-style:decimal;padding-left:18px">
+              <li>Sur cet ordinateur : <i>Paramètres › Sauvegarde › Enregistrer la sauvegarde</i>, sur une clé USB par exemple.</li>
+              <li>Installez Passory sur l'autre appareil et créez un coffre.</li>
+              <li>Sur l'autre appareil : <i>Paramètres › Sauvegarde › Ajouter à mon coffre</i>, avec la même phrase de passe.</li>
+            </ol>
+            <a href="settings.html#sec-backup" class="btn btn-primary mt-3" style="display:inline-flex">
+              <i class="fas fa-box-archive" aria-hidden="true"></i>Faire une sauvegarde
+            </a>
+          </div>
+        </div>
+
+        <h2 class="text-base font-semibold mb-1">Transfert direct par câble <span class="badge badge-yellow ml-1">Expérimental</span></h2>
+        <p class="text-sm mb-4" style="color:var(--text-secondary);line-height:1.55">
+          Envoie uniquement des <b style="color:var(--text-primary)">mots de passe</b>, chiffrés de bout en bout, entre deux appareils reliés par un câble USB.
+          Pour l'instant, cette connexion ne fonctionne qu'avec un téléphone Android relié en mode développeur : pour un autre ordinateur, utilisez la sauvegarde ci-dessus.
+        </p>
+
+        <!-- Sélecteur de mode -->
+        <div class="mode-tabs mb-6" role="tablist" aria-label="Mode de transfert">
+          <button id="tab-send"    class="mode-tab active" role="tab" aria-selected="true"
+                  aria-controls="panel-send">
+            <i class="fas fa-upload mr-2"></i>Envoyer
+          </button>
+          <button id="tab-receive" class="mode-tab" role="tab" aria-selected="false"
+                  aria-controls="panel-receive">
+            <i class="fas fa-download mr-2"></i>Recevoir
+          </button>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- PANNEAU ENVOYER                                 -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <div id="panel-send" role="tabpanel" aria-labelledby="tab-send">
+
+          <!-- Statut -->
+          <div class="transfer-status mb-5" id="send-status-bar">
+            <div class="status-dot waiting" id="send-dot"></div>
+            <span id="send-status-text">Prêt — choisissez les mots de passe puis cliquez sur « Attendre l'autre appareil »</span>
+          </div>
+
+          <!-- Hint câble -->
+          <div class="cable-hint mb-5">
+            <i class="fas fa-circle-info"></i>
+            <div>
+              <strong style="color: var(--text-primary);">Étapes</strong>
+              <ol style="list-style:decimal;padding-left:18px;margin-top:4px">
+                <li>Reliez les deux appareils avec le câble USB.</li>
+                <li>Cochez ci-dessous les mots de passe à envoyer, puis cliquez sur <strong>Attendre l'autre appareil</strong>.</li>
+                <li>Sur l'autre appareil, ouvrez Passory › Transfert › <em>Recevoir</em> et cliquez sur <strong>Se connecter</strong>.</li>
+                <li>Un code (trois mots et un nombre) s'affiche sur les deux écrans : s'il est identique, cliquez sur <strong>Les codes sont identiques</strong> des deux côtés.</li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- SAS (masquée jusqu'à sa disponibilité) -->
+          <div id="send-sas-section" class="sas-card mb-5 section-hidden">
+            <p class="text-sm mb-2" style="color: var(--text-secondary);">
+              <i class="fas fa-shield-halved mr-1" style="color:var(--yellow)"></i>
+              Vérifiez que ce code est exactement le même sur l'autre appareil. S'il est différent, annulez : quelqu'un pourrait tenter d'intercepter le transfert.
+            </p>
+            <div class="sas-code" id="send-sas-code" aria-live="polite"></div>
+            <div class="flex gap-3 mt-4">
+              <button id="send-sas-confirm" class="btn btn-success">
+                <i class="fas fa-check" aria-hidden="true"></i>Les codes sont identiques
+              </button>
+              <button id="send-sas-reject" class="btn btn-danger btn-ghost">
+                <i class="fas fa-times" aria-hidden="true"></i>Annuler
+              </button>
+            </div>
+          </div>
+
+          <!-- Sélection des items -->
+          <div id="send-items-section" class="mb-5">
+            <div class="flex items-center justify-between mb-3">
+              <h2 class="text-sm font-semibold" style="color:var(--text-secondary);">
+                Sélectionnez les mots de passe à envoyer
+              </h2>
+              <div class="flex gap-2">
+                <button id="send-select-all"  class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem">
+                  Tout sélectionner
+                </button>
+                <button id="send-deselect-all" class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem">
+                  Tout désélectionner
+                </button>
+              </div>
+            </div>
+
+            <div id="send-item-search-wrap" class="search-wrap mb-3">
+              <i class="fas fa-magnifying-glass search-icon"></i>
+              <input id="send-item-search" type="search" placeholder="Filtrer…"
+                     class="form-input" style="padding-left:32px"
+                     aria-label="Filtrer les mots de passe" />
+            </div>
+
+            <div id="send-item-list" class="flex flex-col" style="max-height:280px;overflow-y:auto;"
+                 role="list" aria-label="Liste des mots de passe"></div>
+
+            <p id="send-count-hint" class="text-xs mt-2" style="color:var(--text-muted);">
+              Aucun mot de passe sélectionné
+            </p>
+          </div>
+
+          <!-- Progression -->
+          <div id="send-progress-section" class="mb-5 section-hidden">
+            <div class="flex justify-between text-xs mb-1" style="color:var(--text-secondary);">
+              <span>Transfert en cours…</span>
+              <span id="send-progress-label">0 / 0</span>
+            </div>
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                 aria-valuenow="0" id="send-progress-track">
+              <div class="progress-fill" id="send-progress-fill" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-3 flex-wrap" id="send-actions">
+            <button id="send-start-btn" class="btn btn-primary" style="min-height:44px">
+              <i class="fas fa-plug" aria-hidden="true"></i>Attendre l'autre appareil
+            </button>
+            <button id="send-cancel-btn" class="btn btn-danger section-hidden" style="min-height:44px">
+              <i class="fas fa-stop-circle"></i>Annuler
+            </button>
+          </div>
+
+        </div><!-- /panel-send -->
+
+        <!-- ═══════════════════════════════════════════════ -->
+        <!-- PANNEAU RECEVOIR                                -->
+        <!-- ═══════════════════════════════════════════════ -->
+        <div id="panel-receive" class="section-hidden" role="tabpanel" aria-labelledby="tab-receive">
+
+          <!-- Statut -->
+          <div class="transfer-status mb-5" id="recv-status-bar">
+            <div class="status-dot waiting" id="recv-dot"></div>
+            <span id="recv-status-text">Prêt — lancez d'abord l'envoi sur l'autre appareil</span>
+          </div>
+
+          <!-- Hint câble -->
+          <div class="cable-hint mb-5">
+            <i class="fas fa-circle-info"></i>
+            <div>
+              <strong style="color: var(--text-primary);">Comment recevoir ?</strong>
+              <ol style="list-style:decimal;padding-left:18px;margin-top:4px">
+                <li>Sur l'appareil qui envoie, cliquez d'abord sur <strong>Attendre l'autre appareil</strong>.</li>
+                <li>Ici, cliquez sur <strong>Se connecter</strong>.</li>
+                <li>Vérifiez que le code (trois mots et un nombre) est identique sur les deux écrans, puis confirmez. Les mots de passe reçus sont ajoutés à votre coffre.</li>
+              </ol>
+            </div>
+          </div>
+
+          <!-- Champ adresse hôte -->
+          <div class="form-group mb-4 hidden" id="recv-host-group">
+            <label class="form-label" for="recv-host-input">Adresse de l'hôte</label>
+            <input id="recv-host-input" type="text" class="form-input"
+                   value="127.0.0.1" placeholder="127.0.0.1 ou adresse IP locale"
+                   aria-describedby="recv-host-hint" />
+            <p id="recv-host-hint" class="text-xs mt-1" style="color:var(--text-muted)">
+              Laissez 127.0.0.1 (connexion par câble).
+            </p>
+          </div>
+
+          <!-- SAS (masquée jusqu'à sa disponibilité) -->
+          <div id="recv-sas-section" class="sas-card mb-5 section-hidden">
+            <p class="text-sm mb-2" style="color: var(--text-secondary);">
+              <i class="fas fa-shield-halved mr-1" style="color:var(--yellow)"></i>
+              Vérifiez que ce code est exactement le même sur l'autre appareil. S'il est différent, annulez : quelqu'un pourrait tenter d'intercepter le transfert.
+            </p>
+            <div class="sas-code" id="recv-sas-code" aria-live="polite"></div>
+            <div class="flex gap-3 mt-4">
+              <button id="recv-sas-confirm" class="btn btn-success">
+                <i class="fas fa-check" aria-hidden="true"></i>Les codes sont identiques
+              </button>
+              <button id="recv-sas-reject" class="btn btn-danger btn-ghost">
+                <i class="fas fa-times" aria-hidden="true"></i>Annuler
+              </button>
+            </div>
+          </div>
+
+          <!-- Progression -->
+          <div id="recv-progress-section" class="mb-5 section-hidden">
+            <div class="flex justify-between text-xs mb-1" style="color:var(--text-secondary);">
+              <span>Réception en cours…</span>
+              <span id="recv-progress-label">0 / ?</span>
+            </div>
+            <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100"
+                 aria-valuenow="0" id="recv-progress-track">
+              <div class="progress-fill" id="recv-progress-fill" style="width:0%"></div>
+            </div>
+          </div>
+
+          <!-- Items reçus -->
+          <div id="recv-received-section" class="mb-5 section-hidden">
+            <h2 class="text-sm font-semibold mb-3" style="color:var(--text-secondary);">
+              Éléments reçus
+            </h2>
+            <div id="recv-received-list" class="flex flex-col gap-2"
+                 role="list" aria-label="Éléments reçus"></div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex gap-3 flex-wrap" id="recv-actions">
+            <button id="recv-connect-btn" class="btn btn-primary" style="min-height:44px">
+              <i class="fas fa-link" aria-hidden="true"></i>Se connecter
+            </button>
+            <button id="recv-cancel-btn" class="btn btn-danger section-hidden" style="min-height:44px">
+              <i class="fas fa-stop-circle"></i>Annuler
+            </button>
+          </div>
+
+        </div><!-- /panel-receive -->
+
+      </div><!-- /page-content -->
+    </main>
+  </div><!-- /flex -->
+
+  <script src="src/shared/features.js"></script>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/transfer.js"></script>
+</body>
+</html>

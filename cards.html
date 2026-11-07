@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; worker-src 'self'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Passory — Cartes bancaires</title>
+  <link rel="stylesheet" href="assets/css/tailwind.css" />
+  <link rel="stylesheet" href="assets/css/passory-ui.css" />
+  <link rel="stylesheet" href="assets/css/mobile.css" />
+  <script src="src/platform/web-bootstrap.js" defer></script>
+  <link rel="stylesheet" href="assets/fa/css/all.min.css" />
+  <style>
+    .drag { -webkit-app-region: drag; }
+    .no-drag { -webkit-app-region: no-drag; }
+  </style>
+</head>
+<body class="flex flex-col h-screen select-none">
+
+  <div class="titlebar drag">
+    <div class="titlebar-left">
+      <img src="logo.png" alt="logo" class="h-5 w-5" />
+      <span class="titlebar-title">Cartes bancaires</span>
+    </div>
+    <div class="no-drag titlebar-controls">
+      <button id="btn-minimize" class="titlebar-btn"><i class="fas fa-minus"></i></button>
+      <button id="btn-maximize" class="titlebar-btn"><i class="far fa-square"></i></button>
+      <button id="btn-close"    class="titlebar-btn close"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+
+  <div class="flex flex-1 overflow-hidden">
+    <aside data-sidebar data-active="cards"></aside>
+
+    <main class="page-main">
+      <div class="page-content">
+
+        <div class="page-header">
+          <div>
+            <h1 class="page-title">Cartes bancaires</h1>
+            <p class="page-subtitle" id="count-label">…</p>
+          </div>
+          <button id="add-btn" class="btn btn-primary">
+            <i class="fas fa-plus" aria-hidden="true"></i>Ajouter
+          </button>
+        </div>
+
+        <div class="search-wrap mb-5" style="max-width:380px">
+          <i class="fas fa-magnifying-glass search-icon" aria-hidden="true"></i>
+          <input id="search" type="search" aria-label="Rechercher" placeholder="Rechercher (nom, titulaire, banque)…" class="form-input" style="padding-left:32px" />
+        </div>
+
+        <div id="list" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+
+        <div id="empty" class="empty-state hidden">
+          <div class="empty-state-icon"><i class="fas fa-credit-card"></i></div>
+          <div class="empty-state-title">Aucune carte</div>
+          <div class="empty-state-sub">Ajoutez votre première carte bancaire.</div>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal -->
+  <div id="modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-dialog" style="max-width:520px">
+      <div class="modal-header">
+        <h2 id="modal-title" class="modal-title">Ajouter une carte</h2>
+        <button id="modal-close" class="modal-close" type="button" aria-label="Fermer" title="Fermer (Échap)"><i class="fas fa-times" aria-hidden="true"></i></button>
+      </div>
+      <div class="modal-body">
+        <!-- Visual card preview -->
+        <div id="card-preview-wrap" class="mb-4 flex justify-center">
+          <div id="card-preview" class="credit-card card-default" style="max-width:280px">
+            <div class="flex items-start justify-between">
+              <div class="card-chip"></div>
+              <span id="preview-network" class="card-network"></span>
+            </div>
+            <div id="preview-number" class="card-number">•••• •••• •••• ••••</div>
+            <div class="card-bottom">
+              <div>
+                <div class="card-expiry-label">Titulaire</div>
+                <div id="preview-holder" class="card-holder">PRÉNOM NOM</div>
+              </div>
+              <div>
+                <div class="card-expiry-label">Expire</div>
+                <div id="preview-expiry" class="card-expiry">MM/AA</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <form id="modal-form" novalidate>
+          <input type="hidden" id="m-id" />
+          <div class="grid grid-cols-2 gap-3">
+
+            <div class="form-group col-span-2">
+              <label class="form-label" for="m-label">Nom <span aria-hidden="true">*</span><span class="sr-only">(obligatoire)</span></label>
+              <input id="m-label" type="text" required placeholder="Ex. Carte principale"
+                     class="form-input" />
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label" for="m-holder">Titulaire</label>
+              <input id="m-holder" type="text" placeholder="PRÉNOM NOM" class="form-input" />
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label" for="m-number">Numéro de carte</label>
+              <div class="relative">
+                <input id="m-number" type="text" inputmode="numeric" autocomplete="off"
+                       placeholder="•••• •••• •••• ••••"
+                       class="form-input mono" style="padding-right:80px" />
+                <span id="m-network" class="absolute right-3 top-1/2 -translate-y-1/2 text-xs" style="color:var(--text-muted)"></span>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="m-expiry">Date d'expiration</label>
+              <input id="m-expiry" type="text" placeholder="MM/AA" maxlength="5"
+                     class="form-input mono" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="m-cvv">Cryptogramme (CVV)</label>
+              <input id="m-cvv" type="text" placeholder="3 chiffres au dos" inputmode="numeric" maxlength="4" autocomplete="off"
+                     class="form-input mono" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="m-pin">Code PIN</label>
+              <input id="m-pin" type="text" inputmode="numeric" maxlength="8" autocomplete="off"
+                     class="form-input mono" />
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="m-bank">Banque</label>
+              <input id="m-bank" type="text" class="form-input" />
+            </div>
+
+            <div class="form-group col-span-2">
+              <label class="form-label" for="m-notes">Notes</label>
+              <textarea id="m-notes" rows="2" class="form-input form-textarea"></textarea>
+            </div>
+
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <div id="modal-loader" class="hidden modal-loader flex-1 text-left">
+          <i class="fas fa-spinner spin mr-2" aria-hidden="true"></i>Enregistrement…
+        </div>
+        <button type="button" id="modal-cancel" class="btn btn-ghost">Annuler</button>
+        <button type="submit" form="modal-form" id="modal-save" class="btn btn-success">
+          <i class="fas fa-check"></i>Enregistrer
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="src/shared/features.js"></script>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/cards.js"></script>
+  <script src="assets/js/page-cards.js"></script>
+</body>
+</html>

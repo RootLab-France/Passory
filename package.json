@@ -1,0 +1,113 @@
+{
+  "name": "passory-desktop-windows-app",
+  "version": "1.0.0",
+  "main": "main.js",
+  "description": "Passory — gestionnaire de mots de passe local et chiffré, sans compte ni serveur.",
+  "author": "RootLab",
+  "license": "GPL-3.0-only",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "build:css": "tailwindcss -i ./assets/css/tailwind.src.css -o ./assets/css/tailwind.css --minify",
+    "watch:css": "tailwindcss -i ./assets/css/tailwind.src.css -o ./assets/css/tailwind.css --watch",
+    "copy:fa": "node scripts/copy-fa.js",
+    "postinstall": "npm run build:css && npm run copy:fa",
+    "dev": "npm run build:css && electron .",
+    "test": "node tests/roundtrip-crypto.js && node tests/phase2-adapter.js && node tests/app-core.test.js && node tests/pctp-protocol.test.js && node tests/pctp-v2.test.js && node tests/audit-totp.test.js && node tests/security-vault.test.js",
+    "build:web": "npm run build:css && node scripts/build-web.js",
+    "cap:sync": "npm run build:web && cap sync && node scripts/post-cap-sync.js",
+    "cap:open:android": "cap open android",
+    "cap:open:ios": "cap open ios",
+    "cap:run:android": "cap run android",
+    "cap:run:ios": "cap run ios",
+    "test:e2e": "node tests/e2e/run-e2e.js",
+    "dist:win": "electron-builder --win",
+    "dist:dir": "electron-builder --dir"
+  },
+  "dependencies": {
+    "@noble/curves": "^1.6.0",
+    "argon2": "^0.43.0"
+  },
+  "devDependencies": {
+    "@aparajita/capacitor-biometric-auth": "^8.0.2",
+    "@aparajita/capacitor-secure-storage": "^6.0.0",
+    "@capacitor/android": "^6.2.2",
+    "@capacitor/app": "^6.0.3",
+    "@capacitor/cli": "^8.6.0",
+    "@capacitor/clipboard": "^6.0.1",
+    "@capacitor/core": "^6.2.2",
+    "@capacitor/filesystem": "^6.0.1",
+    "@capacitor/ios": "^6.2.2",
+    "@capacitor/preferences": "^6.0.2",
+    "@capacitor/share": "^6.0.2",
+    "@capacitor/status-bar": "^6.0.1",
+    "@fortawesome/fontawesome-free": "^6.7.2",
+    "argon2-browser": "^1.18.0",
+    "electron": "^44.9.3",
+    "electron-builder": "^26.18.0",
+    "tailwindcss": "^3.4.19",
+    "typescript": "^6.0.3"
+  },
+  "productName": "Passory",
+  "build": {
+    "appId": "fr.rootlab.passory",
+    "productName": "Passory",
+    "copyright": "RootLab",
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "items.js",
+      "settings.js",
+      "backup.js",
+      "*.html",
+      "logo.png",
+      "package.json",
+      "assets/**/*",
+      "!assets/css/tailwind.src.css",
+      "src/**/*",
+      "platform/electron/**/*",
+      "!**/*.map",
+      "!**/*.md"
+    ],
+    "asar": true,
+    "npmRebuild": false,
+    "electronFuses": {
+      "runAsNode": false,
+      "enableCookieEncryption": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "enableEmbeddedAsarIntegrityValidation": true,
+      "onlyLoadAppFromAsar": true,
+      "loadBrowserProcessSpecificV8Snapshot": false
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "logo.png",
+      "signtoolOptions": {
+        "publisherName": "RootLab"
+      }
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "target": [
+        "dir"
+      ],
+      "category": "Utility"
+    }
+  }
+}

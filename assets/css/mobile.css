@@ -1,0 +1,146 @@
+/*
+ * mobile.css — ajustements mobile-first pour la WebView Capacitor (Android/iOS).
+ *
+ * Ne s'active QUE quand <body> porte la classe `is-capacitor`, posée par
+ * web-bootstrap.js au moment où il détecte window.Capacitor.isNativePlatform().
+ * Sur desktop (Electron), ces règles restent inertes.
+ *
+ * À inclure APRÈS tailwind.css pour que les overrides prennent effet :
+ *   <link rel="stylesheet" href="assets/css/tailwind.css" />
+ *   <link rel="stylesheet" href="assets/css/mobile.css" />
+ */
+
+/* -----------------------------------------------------------------------
+ * 1. Safe area insets — évite que le contenu passe sous les notches
+ *    iPhone X+ et les navigation bars Android gesture.
+ * ----------------------------------------------------------------------- */
+body.is-capacitor {
+  /* iOS ≥ 11.2 : env(safe-area-inset-*) */
+  padding-top:    env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
+  padding-left:   env(safe-area-inset-left, 0);
+  padding-right:  env(safe-area-inset-right, 0);
+
+  /* Background du safe-area aligné avec le thème gris-900 */
+  background-color: #111827;
+
+  /* Empêche le bounce scroll iOS sur les pages pas scrollables */
+  overscroll-behavior-y: contain;
+
+  /* Sélection texte bloquée par défaut (on réactive sur les champs de texte) */
+  -webkit-user-select: none;
+  user-select: none;
+
+  /* Supprime le highlight tap gris d'Android sur les éléments cliquables */
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.is-capacitor input,
+body.is-capacitor textarea,
+body.is-capacitor [contenteditable="true"] {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* -----------------------------------------------------------------------
+ * 2. Titlebar custom Electron masquée sur mobile
+ *    La classe .drag délimite toujours la zone de titlebar Electron.
+ *    Sur mobile, on la masque complètement (le status bar Android/iOS joue
+ *    ce rôle) et on neutralise la propriété -webkit-app-region.
+ * ----------------------------------------------------------------------- */
+body.is-capacitor .drag,
+body.is-capacitor .no-drag,
+body.is-capacitor [data-role="titlebar"] {
+  -webkit-app-region: unset;
+}
+body.is-capacitor .drag,
+body.is-capacitor [data-role="titlebar"] {
+  display: none !important;
+}
+
+/* -----------------------------------------------------------------------
+ * 3. Cibles tactiles — Human Interface Guidelines imposent ≥ 44×44 CSS px,
+ *    Material Design ≥ 48×48 dp. On harmonise sur 44.
+ * ----------------------------------------------------------------------- */
+body.is-capacitor button,
+body.is-capacitor [role="button"],
+body.is-capacitor a.btn,
+body.is-capacitor input[type="button"],
+body.is-capacitor input[type="submit"] {
+  min-height: 44px;
+  min-width: 44px;
+  /* Espace de respiration entre cibles tactiles */
+  margin: 2px 0;
+}
+
+body.is-capacitor input[type="text"],
+body.is-capacitor input[type="password"],
+body.is-capacitor input[type="email"],
+body.is-capacitor input[type="tel"],
+body.is-capacitor input[type="url"],
+body.is-capacitor input[type="number"],
+body.is-capacitor select,
+body.is-capacitor textarea {
+  min-height: 44px;
+  font-size: 16px;          /* ≥ 16px évite le zoom forcé iOS Safari */
+  padding: 10px 12px;
+}
+
+/* -----------------------------------------------------------------------
+ * 4. Layout : la sidebar classique (desktop) devient bottom nav
+ * ----------------------------------------------------------------------- */
+body.is-capacitor [data-role="sidebar"] {
+  /* Transformer la sidebar desktop en bottom nav fixe */
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  top: auto;
+  width: 100%;
+  height: auto;
+  flex-direction: row;
+  justify-content: space-around;
+  padding: 8px env(safe-area-inset-right, 0) calc(8px + env(safe-area-inset-bottom, 0)) env(safe-area-inset-left, 0);
+  border-top: 1px solid rgb(55, 65, 81); /* gray-700 */
+  background-color: rgb(17, 24, 39);     /* gray-900 */
+  z-index: 50;
+}
+
+body.is-capacitor [data-role="sidebar"] [data-role="sidebar-item"] {
+  flex: 1;
+  text-align: center;
+  font-size: 12px;
+  padding: 6px 4px;
+}
+
+body.is-capacitor [data-role="main-content"] {
+  margin-left: 0 !important;
+  /* Laisse la place à la bottom nav + safe area */
+  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0));
+}
+
+/* -----------------------------------------------------------------------
+ * 5. Modales plein écran sur mobile (au lieu de centrées limitées)
+ * ----------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  body.is-capacitor [data-role="modal"] {
+    inset: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    max-height: 100% !important;
+    border-radius: 0 !important;
+  }
+}
+
+/* -----------------------------------------------------------------------
+ * 6. Scroll lisse — évite l'effet de "tombé" saccadé Android
+ * ----------------------------------------------------------------------- */
+body.is-capacitor,
+body.is-capacitor [data-role="main-content"] {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* -----------------------------------------------------------------------
+ * 7. Boutons de fenêtre Electron (min/max/close) → masqués en mobile
+ * ----------------------------------------------------------------------- */
+body.is-capacitor [data-role="window-controls"] {
+  display: none !important;
+}

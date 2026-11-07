@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; worker-src 'self'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Passory — Accueil · Gestionnaire de mots de passe</title>
+  <meta name="description" content="Tableau de bord Passory : accédez à vos mots de passe, cartes, IBAN, notes et identités chiffrés localement." />
+  <link rel="stylesheet" href="assets/css/tailwind.css" />
+  <link rel="stylesheet" href="assets/css/passory-ui.css" />
+  <link rel="stylesheet" href="assets/css/mobile.css" />
+  <script src="src/platform/web-bootstrap.js" defer></script>
+  <link rel="stylesheet" href="assets/fa/css/all.min.css" />
+  <style>
+    .drag { -webkit-app-region: drag; }
+    .no-drag { -webkit-app-region: no-drag; }
+  </style>
+</head>
+<body class="flex flex-col h-screen select-none">
+
+  <div class="titlebar drag">
+    <div class="titlebar-left">
+      <img src="logo.png" alt="logo" class="h-5 w-5" />
+      <span class="titlebar-title">Passory</span>
+    </div>
+    <div class="no-drag titlebar-controls">
+      <button id="btn-minimize" class="titlebar-btn" aria-label="Réduire la fenêtre"><i class="fas fa-minus" aria-hidden="true"></i></button>
+      <button id="btn-maximize" class="titlebar-btn" aria-label="Agrandir la fenêtre"><i class="far fa-square" aria-hidden="true"></i></button>
+      <button id="btn-close"    class="titlebar-btn close" aria-label="Fermer l'application"><i class="fas fa-times" aria-hidden="true"></i></button>
+    </div>
+  </div>
+
+  <div class="flex flex-1 overflow-hidden">
+    <aside data-sidebar data-active="dashboard"></aside>
+
+    <main class="page-main">
+      <div class="page-content">
+
+        <!-- Header -->
+        <div class="mb-5">
+          <h1 class="page-title">Accueil</h1>
+          <p class="page-subtitle">Votre coffre est ouvert. Pensez à le verrouiller si vous vous absentez.</p>
+        </div>
+
+        <!-- Nouveau coffre : comment restaurer une sauvegarde -->
+        <div id="restore-hint" class="notice notice-info mb-5 hidden" style="max-width:900px" role="status">
+          <i class="fas fa-file-import" aria-hidden="true"></i>
+          <div class="flex-1">
+            <b id="restore-hint-title">Vous avez déjà une sauvegarde Passory ?</b>
+            <div class="notice-sub">Restaurez-la dans ce nouveau coffre : <b style="color:var(--text-primary)">Paramètres › Sauvegarde › Restaurer une sauvegarde</b>.
+              Il vous faudra le fichier de sauvegarde et la phrase de passe choisie lors de sa création.</div>
+          </div>
+          <a href="settings.html#sec-backup" class="btn btn-primary" id="restore-hint-btn" style="align-self:center">Restaurer une sauvegarde</a>
+        </div>
+
+        <!-- Rappel de sauvegarde -->
+        <div id="backup-reminder" class="notice notice-warn mb-5 hidden" style="max-width:900px">
+          <i class="fas fa-box-archive" aria-hidden="true"></i>
+          <div class="flex-1">
+            <b id="backup-reminder-title">Faites une sauvegarde de votre coffre</b>
+            <div class="notice-sub" id="backup-reminder-text">Vos données n'existent que sur cet ordinateur. En cas de panne, de vol ou de réinstallation, une sauvegarde est le seul moyen de les retrouver.</div>
+          </div>
+          <a href="settings.html#sec-backup" class="btn btn-primary" style="align-self:center">Sauvegarder maintenant</a>
+        </div>
+
+        <!-- Recherche globale -->
+        <div class="mb-8">
+          <div class="search-wrap" style="max-width:520px">
+            <label for="global-search" class="sr-only">Recherche globale dans le coffre</label>
+            <i class="fas fa-magnifying-glass search-icon" aria-hidden="true"></i>
+            <input id="global-search" type="search"
+                   placeholder="Rechercher dans tout le coffre (nom, site, identifiant…)"
+                   class="form-input" style="padding-left:32px;padding-right:80px"
+                   autocomplete="off" spellcheck="false" aria-controls="results" />
+            <div class="kbd-hint">
+              <span class="kbd">Ctrl</span><span class="kbd">F</span>
+            </div>
+          </div>
+          <div id="results" class="hidden mt-2 rounded-xl border border-[var(--border)] overflow-hidden" role="region" aria-live="polite" aria-label="Résultats de la recherche" style="max-width:520px;background:var(--bg-surface);max-height:340px;overflow-y:auto;"></div>
+        </div>
+
+        <!-- Grille -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3" style="max-width:900px">
+
+          <a href="passwords.html" class="dash-card">
+            <div class="dash-card-icon" style="background:rgba(59,130,246,0.15)" aria-hidden="true">
+              <i class="fas fa-key icon-blue"></i>
+            </div>
+            <div>
+              <div class="dash-card-count" data-count="password" aria-live="polite" aria-label="Nombre de mots de passe">—</div>
+              <div class="dash-card-label">Mots de passe</div>
+            </div>
+          </a>
+
+          <a href="cards.html" class="dash-card">
+            <div class="dash-card-icon" style="background:rgba(99,102,241,0.15)" aria-hidden="true">
+              <i class="fas fa-credit-card icon-indigo"></i>
+            </div>
+            <div>
+              <div class="dash-card-count" data-count="card" aria-live="polite" aria-label="Nombre de cartes bancaires">—</div>
+              <div class="dash-card-label">Cartes bancaires</div>
+            </div>
+          </a>
+
+          <a href="ibans.html" class="dash-card">
+            <div class="dash-card-icon" style="background:rgba(20,184,166,0.15)" aria-hidden="true">
+              <i class="fas fa-building-columns icon-teal"></i>
+            </div>
+            <div>
+              <div class="dash-card-count" data-count="iban" aria-live="polite" aria-label="Nombre de comptes IBAN">—</div>
+              <div class="dash-card-label">Comptes / IBAN</div>
+            </div>
+          </a>
+
+          <a href="notes.html" class="dash-card">
+            <div class="dash-card-icon" style="background:rgba(245,158,11,0.15)" aria-hidden="true">
+              <i class="fas fa-sticky-note icon-amber"></i>
+            </div>
+            <div>
+              <div class="dash-card-count" data-count="note" aria-live="polite" aria-label="Nombre de notes privées">—</div>
+              <div class="dash-card-label">Notes privées</div>
+            </div>
+          </a>
+
+          <a href="identities.html" class="dash-card">
+            <div class="dash-card-icon" style="background:rgba(217,70,239,0.15)" aria-hidden="true">
+              <i class="fas fa-id-card icon-fuchsia"></i>
+            </div>
+            <div>
+              <div class="dash-card-count" data-count="identity" aria-live="polite" aria-label="Nombre d'identités">—</div>
+              <div class="dash-card-label">Identités</div>
+            </div>
+          </a>
+
+          <a href="settings.html" class="dash-card">
+            <div class="dash-card-icon" style="background:rgba(75,85,99,0.3)" aria-hidden="true">
+              <i class="fas fa-shield-halved icon-gray"></i>
+            </div>
+            <div>
+              <div class="dash-card-label">Sécurité et sauvegarde</div>
+              <div class="dash-card-sub" id="security-score" aria-live="polite">—</div>
+            </div>
+          </a>
+
+        </div>
+
+        <!-- Info coffre -->
+        <div class="mt-8 flex items-center gap-2 text-xs" style="color:var(--text-muted)">
+          <i class="fas fa-shield-halved" style="color:var(--green)" aria-hidden="true"></i>
+          Vos données sont chiffrées et ne quittent jamais cet ordinateur.
+          <a href="settings.html#sec-about" class="link">À propos de Passory</a>
+        </div>
+
+      </div>
+    </main>
+  </div>
+
+  <script src="src/shared/features.js"></script>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/dashboard.js"></script>
+</body>
+</html>

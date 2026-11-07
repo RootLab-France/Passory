@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; worker-src 'self'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Passory — Déverrouiller</title>
+  <link rel="stylesheet" href="assets/css/tailwind.css" />
+  <link rel="stylesheet" href="assets/css/passory-ui.css" />
+  <link rel="stylesheet" href="assets/css/mobile.css" />
+  <script src="src/platform/web-bootstrap.js" defer></script>
+  <link rel="stylesheet" href="assets/fa/css/all.min.css" />
+  <style>
+    .drag { -webkit-app-region: drag; }
+    .no-drag { -webkit-app-region: no-drag; }
+    body { background: var(--bg-base); }
+  </style>
+</head>
+<body class="flex flex-col h-screen select-none">
+
+  <div class="titlebar drag">
+    <div class="titlebar-left">
+      <img src="logo.png" alt="logo" class="h-5 w-5" />
+      <span class="titlebar-title">Passory</span>
+    </div>
+    <div class="no-drag titlebar-controls">
+      <button id="btn-minimize" class="titlebar-btn"><i class="fas fa-minus"></i></button>
+      <button id="btn-maximize" class="titlebar-btn"><i class="far fa-square"></i></button>
+      <button id="btn-close"    class="titlebar-btn close"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+
+  <main class="flex-1 flex p-4 overflow-y-auto">
+    <div class="login-card" style="margin:auto">
+
+      <div class="flex flex-col items-center gap-3 mb-6">
+        <div class="login-logo">
+          <i class="fas fa-shield-halved"></i>
+        </div>
+        <div class="text-center">
+          <h1 class="text-xl font-bold">Déverrouiller Passory</h1>
+          <p class="text-sm mt-1" style="color:var(--text-secondary)">Entrez votre mot de passe maître</p>
+        </div>
+      </div>
+
+      <form id="form" class="flex flex-col gap-3">
+
+        <div class="form-group">
+          <div class="relative">
+            <label for="password" class="sr-only">Mot de passe maître</label>
+            <input id="password" type="password" required autocomplete="current-password"
+                   placeholder="Mot de passe maître"
+                   class="form-input" style="padding-right:40px" />
+            <button type="button" id="toggle-password"
+                    class="item-action-btn absolute right-2 top-1/2 -translate-y-1/2"
+                    aria-label="Afficher le mot de passe" title="Afficher le mot de passe">
+              <i class="fas fa-eye" aria-hidden="true"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="submit-btn" class="btn btn-primary" style="justify-content:center;padding-top:10px;padding-bottom:10px;font-size:0.9rem">
+          <i class="fas fa-unlock" aria-hidden="true"></i>Déverrouiller
+        </button>
+
+        <button type="button" id="quick-btn"
+                class="btn hidden" style="background:#059669;color:#fff;justify-content:center;padding-top:10px;padding-bottom:10px">
+          <i class="fas fa-fingerprint" aria-hidden="true"></i>Déverrouiller avec la biométrie
+        </button>
+
+        <p id="error-msg" class="text-sm text-center hidden" role="alert" style="color:#fca5a5"></p>
+        <p id="info-msg"  class="text-sm text-center hidden" role="status" style="color:#93c5fd"></p>
+
+      </form>
+
+      <div class="mt-3 text-center">
+        <button type="button" id="forgot-btn" class="link text-xs" aria-expanded="false" aria-controls="forgot-help">Mot de passe maître oublié ?</button>
+        <div id="forgot-help" class="hidden text-xs mt-2 text-left" style="color:var(--text-secondary);line-height:1.5">
+          <p>
+            Passory ne garde aucune copie de votre mot de passe maître : personne ne peut le retrouver ni le réinitialiser,
+            pas même RootLab. Essayez les variantes dont vous vous souvenez (majuscules, chiffres à la fin…).
+          </p>
+          <p class="mt-2">
+            Si vous l'avez vraiment perdu, les données de ce coffre ne sont plus accessibles. Vous pouvez
+            <b style="color:var(--text-primary)">repartir de zéro</b> : le coffre actuel est effacé, vous choisissez un
+            nouveau mot de passe maître, puis vous restaurez une sauvegarde si vous en avez une
+            (il faudra la phrase de passe de cette sauvegarde).
+          </p>
+          <div class="mt-3 text-center">
+            <button type="button" id="reset-btn" class="btn btn-ghost" style="color:#fca5a5;border-color:rgba(239,68,68,0.55);font-size:0.8rem">
+              <i class="fas fa-rotate-left" aria-hidden="true"></i>Repartir de zéro…
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-4 pt-4 border-t flex items-center justify-center gap-2 text-xs" style="border-color:var(--border);color:var(--text-muted)">
+        <i class="fas fa-lock" style="color:var(--green)" aria-hidden="true"></i>
+        Vos données restent sur cet ordinateur, chiffrées.
+      </div>
+
+    </div>
+  </main>
+
+  <script src="src/shared/features.js"></script>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/login.js"></script>
+</body>
+</html>

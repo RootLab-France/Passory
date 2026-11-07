@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'; worker-src 'self'" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Passory — Notes privées</title>
+  <link rel="stylesheet" href="assets/css/tailwind.css" />
+  <link rel="stylesheet" href="assets/css/passory-ui.css" />
+  <link rel="stylesheet" href="assets/css/mobile.css" />
+  <script src="src/platform/web-bootstrap.js" defer></script>
+  <link rel="stylesheet" href="assets/fa/css/all.min.css" />
+  <style>
+    .drag { -webkit-app-region: drag; }
+    .no-drag { -webkit-app-region: no-drag; }
+    #e-content { resize: none; flex: 1; }
+    .notes-panel { border-right: 1px solid var(--border); }
+  </style>
+</head>
+<body class="flex flex-col h-screen select-none">
+
+  <div class="titlebar drag">
+    <div class="titlebar-left">
+      <img src="logo.png" alt="logo" class="h-5 w-5" />
+      <span class="titlebar-title">Notes privées</span>
+    </div>
+    <div class="no-drag titlebar-controls">
+      <button id="btn-minimize" class="titlebar-btn"><i class="fas fa-minus"></i></button>
+      <button id="btn-maximize" class="titlebar-btn"><i class="far fa-square"></i></button>
+      <button id="btn-close"    class="titlebar-btn close"><i class="fas fa-times"></i></button>
+    </div>
+  </div>
+
+  <div class="flex flex-1 overflow-hidden">
+    <aside data-sidebar data-active="notes"></aside>
+
+    <main class="flex-1 flex overflow-hidden">
+
+      <!-- Liste -->
+      <section class="notes-panel flex flex-col overflow-hidden" style="width:260px;min-width:200px;background:var(--bg-surface)">
+        <div class="p-3 border-b" style="border-color:var(--border)">
+          <div class="flex items-center justify-between mb-2">
+            <h1 class="font-semibold text-sm" style="color:var(--text-primary)">Notes</h1>
+            <button id="add-btn" class="btn btn-primary btn-icon" title="Nouvelle note (Ctrl+N)" aria-label="Nouvelle note">
+              <i class="fas fa-plus" aria-hidden="true"></i>
+            </button>
+          </div>
+          <div class="search-wrap">
+            <i class="fas fa-magnifying-glass search-icon" aria-hidden="true"></i>
+            <input id="search" type="search" placeholder="Rechercher un titre…" aria-label="Rechercher une note"
+                   class="form-input" style="padding-left:30px;font-size:0.8rem;padding-top:6px;padding-bottom:6px" />
+          </div>
+        </div>
+        <div id="list" class="flex-1 overflow-y-auto p-2"></div>
+        <p id="empty" class="hidden p-4 text-center text-sm" style="color:var(--text-secondary)">
+          Aucune note. Cliquez sur <strong>+</strong>.
+        </p>
+      </section>
+
+      <!-- Éditeur -->
+      <section class="flex-1 flex flex-col overflow-hidden">
+        <div id="editor-empty" class="flex-1 flex items-center justify-center">
+          <div class="empty-state">
+            <div class="empty-state-icon"><i class="fas fa-sticky-note"></i></div>
+            <div class="empty-state-title">Aucune note sélectionnée</div>
+            <div class="empty-state-sub">Sélectionnez une note ou créez-en une nouvelle avec Ctrl+N</div>
+          </div>
+        </div>
+
+        <div id="editor" class="hidden flex-1 flex flex-col p-5 overflow-hidden gap-3">
+          <label for="e-title" class="sr-only">Titre de la note</label>
+          <input id="e-title" type="text" placeholder="Titre de la note"
+                 class="form-input text-xl font-bold"
+                 style="background:transparent;border:none;border-bottom:1px solid var(--border);border-radius:0;padding-left:0;padding-right:0;padding-top:0" />
+          <label for="e-content" class="sr-only">Contenu de la note</label>
+          <textarea id="e-content"
+                    placeholder="Écrivez votre note ici. Elle est enregistrée automatiquement et chiffrée."
+                    class="form-input form-textarea font-mono text-sm"></textarea>
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div class="flex items-center gap-3 text-xs flex-wrap" style="color:var(--text-muted)" aria-live="polite">
+              <span id="e-meta"></span>
+              <span id="char-count"></span>
+              <span id="e-save-status" class="hidden" style="color:var(--green)">
+                <i class="fas fa-check mr-1" aria-hidden="true"></i>Enregistrée
+              </span>
+              <span id="e-saving" class="hidden">
+                <i class="fas fa-spinner spin mr-1" aria-hidden="true"></i>Enregistrement…
+              </span>
+            </div>
+            <div class="flex gap-2 shrink-0">
+              <button id="e-copy" class="btn btn-ghost">
+                <i class="fas fa-copy" aria-hidden="true"></i>Copier le contenu
+              </button>
+              <button id="e-delete" class="btn btn-danger">
+                <i class="fas fa-trash" aria-hidden="true"></i>Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="src/shared/features.js"></script>
+
+  <script src="assets/js/common.js"></script>
+  <script src="assets/js/notes.js"></script>
+  <script src="assets/js/page-notes.js"></script>
+</body>
+</html>

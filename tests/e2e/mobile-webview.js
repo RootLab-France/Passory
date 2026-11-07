@@ -1,0 +1,62 @@
+'use strict';
+const { app, BrowserWindow } = require('electron');
+const path = require('path');
+app.setPath('userData', process.env.E2E_DIR);
+const WWW = path.join(__dirname, '../../www');
+const results = []; const problems = [];
+const ok = (n, c, x) => { results.push(`${c ? 'OK  ' : 'FAIL'} ${n}${x ? ' — ' + x : ''}`); if (!c) process.exitCode = 1; };
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+app.whenReady().then(async () => {
+  const win = new BrowserWindow({ show: false, webPreferences: { contextIsolation: false, sandbox: false, nodeIntegration: false, preload: path.join(__dirname, 'capacitor-mock-preload.js') } });
+  win.webContents.on('console-message', (e) => { if (e.level === 'error' || /Content Security Policy|Refused|WebAssembly/.test(e.message)) problems.push(e.message.slice(0, 180)); });
+  const js = (c) => win.webContents.executeJavaScript(c, true);
+  const open = async (p, query) => { try { await win.loadFile(path.join(WWW, p), query ? { query } : undefined); } catch (e) { if (!/ERR_ABORTED/.test(e.message)) throw e; await sleep(500); } await js(`new Promise((r) => window.passory && !window.passory.__pending ? r() : window.addEventListener('passory:ready', () => r(), { once: true }))`); await sleep(300); };
+  try {
+    await open('index.html'); await sleep(800);
+    ok('premier lancement → création du maître', win.webContents.getURL().endsWith('create-master-password.html'), win.webContents.getURL());
+    await open('create-master-password.html');
+    const c = await js(`window.passory.auth.createMaster('Factice-Mobile-Maitre-26')`);
+    ok('création (argon2 WASM sous CSP)', c.success, JSON.stringify(c));
+    ok('ajout élément', (await js(`window.passory.items.add('note', {title:'factice'})`)).success);
+    await open('dashboard.html');
+    ok('session conservée entre pages (mobile)', await js(`window.passory.auth.isUnlocked()`));
+    await js(`localStorage.setItem('bioOk','1')`);
+    ok('activation déverrouillage rapide (biométrie OK)', (await js(`window.passory.quickUnlock.enable()`)).success);
+    await js(`window.passory.auth.lock()`);
+    await js(`localStorage.setItem('bioOk','0'); localStorage.setItem('bioCalls','0')`);
+    await open('login.html'); await sleep(800);
+    ok('biométrie refusée → coffre reste verrouillé', !(await js(`window.passory.auth.isUnlocked()`)) && win.webContents.getURL().endsWith('login.html'));
+    ok('la biométrie a bien été demandée', Number(await js(`localStorage.getItem('bioCalls')`)) >= 1);
+    await js(`localStorage.setItem('bioOk','1')`);
+    await open('login.html'); await sleep(1000);
+    ok('biométrie acceptée → déverrouillé', win.webContents.getURL().endsWith('dashboard.html') || await js(`window.passory.auth.isUnlocked()`), win.webContents.getURL());
+    await open('passwords.html');
+    const l = await js(`window.passory.items.list()`);
+    ok('données lisibles après déverrouillage rapide', l.success && l.entries.length === 1 && !l.entries[0].corrupt);
+    const nid = l.entries[0].id;
+    const cp = await js(`window.passory.items.copyField(${JSON.stringify(nid)}, 'title')`);
+    ok('copie via le presse-papier sensible (Android)', cp.success && (await js(`localStorage.getItem('clipSensitive')`)) === 'factice' && !(await js(`localStorage.getItem('clipPlain')`)));
+    const vault = await js(`localStorage.getItem('fs:DATA:passory/vault.json')`);
+    ok('coffre v2 écrit (atomique, pas de .tmp)', vault && JSON.parse(vault).format === 2 && (await js(`Object.keys(localStorage).filter(k=>k.endsWith('.tmp')).length`)) === 0);
+    for (const p of ['cards.html', 'ibans.html', 'identities.html', 'notes.html', 'settings.html']) { await open(p); }
+    // « Repartir de zéro » : même cœur que le bureau, via web-bootstrap.js
+    ok('réglage biométrie visible sur téléphone', await js(`!document.getElementById('qu-row').classList.contains('hidden')`));
+    ok('« Repartir de zéro » refusé coffre ouvert', (await js(`window.passory.auth.resetForgotten('EFFACER')`)).success === false);
+    await js(`window.passory.auth.lock()`);
+    await js(`localStorage.setItem('bioOk','0')`);
+    await open('login.html'); await sleep(600);
+    ok('« Repartir de zéro » refusé sans le mot EFFACER', (await js(`window.passory.auth.resetForgotten('oui')`)).success === false);
+    const rz = await js(`window.passory.auth.resetForgotten('EFFACER')`);
+    ok('« Repartir de zéro » accepté coffre verrouillé (mobile)', rz.success === true, JSON.stringify(rz));
+    const left = await js(`Object.keys(localStorage).filter((k) => /vault|master-key|session-key/.test(k))`);
+    ok('mobile : coffre, clé biométrique et session effacés', left.length === 0, left.join(','));
+    ok('mobile : plus de mot de passe maître', (await js(`window.passory.auth.hasMaster()`)) === false);
+    await open('create-master-password.html', { repartir: '1' });
+    ok('mobile : écran de création avec explication', await js(`!document.getElementById('restart-notice').classList.contains('hidden')`));
+    ok('mobile : nouveau coffre créé', (await js(`window.passory.auth.createMaster('Nouveau-Mobile-Maitre-27')`)).success);
+    ok('mobile : nouveau coffre vide', (await js(`window.passory.items.counts()`)).total === 0);
+    ok('aucune erreur console / CSP sur les pages mobiles', problems.length === 0, problems.slice(0, 4).join(' | '));
+  } catch (e) { ok('exécution', false, e.stack); }
+  console.log('\n' + results.join('\n'));
+  app.exit(process.exitCode || 0);
+});

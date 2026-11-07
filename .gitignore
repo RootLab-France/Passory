@@ -1,0 +1,66 @@
+# ---------------------------------------------------------------------------
+# Passory — fichiers exclus du dépôt public.
+# Règle de base : si un fichier peut contenir un secret, il n'entre pas ici.
+# ---------------------------------------------------------------------------
+
+# Dépendances et sorties de build
+node_modules/
+dist/
+out/
+release/
+assets/css/tailwind.css
+assets/fa/
+
+# Coffre et données personnelles — ne doivent JAMAIS être publiés
+data/
+data-*/
+*.vault
+*.vault.bak
+
+# Archives et sauvegardes locales
+*.tgz
+*.tar.gz
+*.zip
+_sauvegarde-*
+*-sauvegarde-*
+
+# Android — sorties Gradle et signature
+android/.gradle/
+android/build/
+android/app/build/
+android/capacitor-cordova-android-plugins/build/
+android/local.properties
+android/.idea/
+*.keystore
+*.jks
+
+# Signature de code — jamais dans le dépôt
+*.pfx
+*.p12
+*.pem
+*.key
+
+# Outils et notes de travail internes
+.claude/
+CLAUDE.md
+AUDIT-SECURITE-BRIEF.md
+graphify-out/
+
+# Divers
+*.log
+npm-debug.log*
+.env
+.env.*
+.DS_Store
+Thumbs.db
+
+# Sortie de build mobile — regénérée par `npm run build:web`, ne pas versionner
+www/
+
+# Ancien dossier de sauvegarde manuelle (contient « logo - Copie.png »).
+# Exclu par précaution : retire ces deux lignes si tu veux vraiment le publier.
+save/
+
+# Document de travail interne : chemins locaux et liste détaillée des limites
+# non corrigées. Ne pas publier tel quel ; en tirer un CHANGELOG si besoin.
+CORRECTIFS-SECURITE.md
