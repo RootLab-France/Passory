@@ -10,7 +10,7 @@ global.window.Passory = global.window.Passory || {};
 
 const assert = require('node:assert/strict');
 
-require('../www/assets/js/totp.js');
+require('../assets/js/totp.js');
 const totp = global.window.Passory.totp;
 
 async function testIsValidBase32() {
