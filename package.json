@@ -1,5 +1,5 @@
 {
-  "name": "passory-desktop-windows-app",
+  "name": "passory",
   "version": "1.0.0",
   "main": "main.js",
   "description": "Passory — gestionnaire de mots de passe local et chiffré, sans compte ni serveur.",
@@ -101,7 +101,8 @@
     "nsis": {
       "oneClick": false,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "include": "build/installer.nsh"
     },
     "linux": {
       "target": [
